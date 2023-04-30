@@ -85,7 +85,7 @@ def source_from_text(text: str, k: int = 1, pre: str = "") -> Source:
     """Returns the frequency of each block in the string.
 
     `k` is the number of characters from the `text` that are considered to be a block.
-    `pre` is the prefix that every block must have in yhr dyting to be considered one.
+    `pre` is the prefix that every block must have in order to be considered one.
     """
     freq = dict()
     pre_len = len(pre)
