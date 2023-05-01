@@ -3,6 +3,7 @@
 import math
 import itertools
 import heapq
+from collections import Counter
 
 Source = list[tuple[str, int | float]]
 Code = dict[str, str]
@@ -38,30 +39,64 @@ class HuffmanTree:
         result = HuffmanTree._get_code(self)
 
         if canonical:
-            # Sort by codeword length and then by key lexicographically
+            # Sort by codeword length and then by key lexicographically in
+            # increasing order.
             code = sorted(result.items(), key=lambda t: (len(t[1]), t[0]))
-            print(code)
-            result = {k: v for (k, v) in zip(iter('abcd'), range(4))}
+            keys = []
+            lens = []
+            for (k, v) in code:
+                keys.append(k)
+                lens.append(len(v))
+
+            codewords = self._binary_canonical_code(lens)
+            result = dict(zip(keys, codewords))
 
         return result
+
+    def _binary_canonical_code(self, lengths: list[int]) -> list[str]:
+        """Returns the binary prefix code based on the given list of codeword lengths.
+
+        This is an optimized version that skips a lot of checks because the
+        input list is assumed to have certain guarantees. For example, it
+        assumes that the list is ordered increasingly and that the lengths
+        satisfy the Kraft-McMillan inequality.
+        """
+        counter = list(Counter(lengths).items())
+        codewords = []
+        num = 0
+        prev_length = counter[0][0]
+
+        for (length, count) in counter:
+            num = num << (length - prev_length)
+            for _ in range(count):
+                codewords.append(f"{num:0{length}b}")
+                num += 1
+            prev_length = length
+
+        return codewords
 
     @staticmethod
     def build_tree(src: Source):
         """Constructs a Huffman tree from a source.
+
+        The source is expected to be sorted increasingly in lexicographical
+        order by key.
         """
-        # Remember insertion order to break ties. Tuples are compared position
-        # by position: the first item of the first tuple is compared to the
-        # first item of the second tuple; if they are equal the second item is
-        # considered, then the third and so on.
-        pq = [(f, i, HuffmanTree(c)) for (i, (c, f)) in enumerate(src)]
+        # Prioritize reversed insertion order to break ties. Tuples are
+        # compared position by position: the first item of the first tuple is
+        # compared to the first item of the second tuple; if they are equal the
+        # second item is considered, then the third and so on.
+        # The later and element is popped from the queue the shorter its
+        # codeword is going to be.
+        pq = [(f, len(src) - i, HuffmanTree(c)) for (i, (c, f)) in enumerate(src)]
         heapq.heapify(pq)
 
         root = HuffmanTree()
         while len(pq) > 1:
-            (f1, o1, node_l) = heapq.heappop(pq)
-            (f2, o2, node_r) = heapq.heappop(pq)
+            (f1, _, node_l) = heapq.heappop(pq)
+            (f2, _, node_r) = heapq.heappop(pq)
             root = HuffmanTree(None, node_l, node_r)
-            heapq.heappush(pq, (f1 + f2, min(o1, o2), root))
+            heapq.heappush(pq, (f1 + f2, 0, root))
 
         return root
 
@@ -70,11 +105,11 @@ class HuffmanTree:
 # Auxilary functions #
 ######################
 
-def entropy_pd(pd: list[float]):
-    """Given a probability distribution (pd) returns its entropy.
+def entropy_pd(pmf: list[float]):
+    """Given a probability mass function (pmf) return its entropy.
     """
     acum = 0.0
-    for p_i in pd:
+    for p_i in pmf:
         if p_i != 0:
             acum += p_i * -math.log2(p_i)
 
@@ -154,15 +189,30 @@ def huffman_code(src: Source):
     return tree.get_huffman_code()
 
 
+def arithmetic_encode(text: str, k: int) -> str:
+    pass
+
+
+def arithmetic_decode(code: Code, k: int, src: Source, length: int) -> str:
+    pass
+
+
 #########
 # Tests #
 #########
 
 if __name__ == "__main__":
-    text = "ccdabbb"
+    text = "0000000001"
     src = source_from_text(text)
-    # src = source_extension(src, 2)
+    src = source_extension(src, 3)
     print(src)
+
     tree = HuffmanTree.build_tree(src)
-    code = tree.get_huffman_code()
-    print(code)
+    print('--- Huffman code')
+    code = tree.get_huffman_code(False)
+    for (k, v) in sorted(code.items()):
+        print(f"{k} -> {v}")
+    print('--- Canonical Huffman code')
+    code = tree.get_huffman_code(True)
+    for (k, v) in sorted(code.items()):
+        print(f"{k} -> {v}")

@@ -55,7 +55,6 @@ class Tree:
             yield node.data
             for child in node.children:
                 queue.append(child)
-        # raise StopIteration
 
     @staticmethod
     def from_prefix_code(code: List[str]) -> Self:
