@@ -1,29 +1,63 @@
-"""Lab3 code."""
+"""Lab4 implementation."""
 
-from typing import List, Tuple
 from collections import Counter
-from utils import Timer
-import random
 import math
 
-##########################################
-# LZ77: diccionaris de finestra lliscant #
-##########################################
+Token77 = tuple[int, int, str]
+NOT_FOUND = -1
+
+#####################################
+# LZ77: sliding window dictionaries #
+#####################################
 
 
-def encode_LZ77(text: str, s, t):
-    pass
+def encode_LZ77(text: str, s: int, t: int) -> list[Token77]:
+    """Encode a python string with the LZ77 algorithm.
+
+    Parameters
+    ----------
+    text : Sequence of characters to be encoded.
+    s : Search buffer length.
+    t : Lookahead buffer length.
+    """
+    tokens = []
+    curr_pos = 0  # window position (first index of the lookahead buffer)
+    n = len(text)
+
+    while curr_pos < n:
+        # 1. Find the longest match
+        w_begin = max(0, curr_pos - s)    # window first index
+        w_end = min(n - 1, curr_pos + t)  # window last index + 1
+        (index, length) = find_longest_match(text, curr_pos, w_begin, w_end)
+        print
+        # 2. Append token
+        offset = (curr_pos - index) if index != NOT_FOUND else 1
+        symbol = text[curr_pos + length]
+        token = (offset, length, symbol)
+        tokens.append(token)
+        # 3. Increase pointer
+        curr_pos += length + 1
+
+    return tokens
 
 
-def decode_LZ77(tok):
-    pass
+def decode_LZ77(tokens: list[Token77]) -> str:
+    text = []
+
+    for (offset, length, symbol) in tokens:
+        if length > 0:
+            for _ in range(length):
+                text.append(text[-offset])
+        text.append(symbol)
+
+    return "".join(text)
 
 
 def encode_LZSS(text: str, mm, s, t):
     pass
 
 
-def decode_LZSS(tok):
+def decode_LZSS(tokens):
     pass
 
 
@@ -69,119 +103,54 @@ def decode_move_to_front(tok, alf):
     pass
 
 
-# def source_from_text(text: str) -> List[Tuple[str, int]]:
-#     """Returns the frequency of each character in the string.
-#     """
-#     freq = {}
-#     for c in text:
-#         freq[c] = freq.get(c, 0) + 1
-
-#     return list(freq.items())
+#######################
+# Auxiliary functions #
+#######################
 
 
-# def encode(text: str, corr: List[Tuple[str, str]]) -> str:
-#     map_ab = dict(corr)
-#     i = 0
-#     j = 1
-#     result = []
-#     while j <= len(text):
-#         word = text[i:j]
-#         if word in map_ab:
-#             result.append(map_ab[word])
-#             i = j
-#         j += 1
+def find_longest_match(data: str, curr_pos: int, window_begin: int, window_end: int) -> tuple[int, int]:
+    for word_end in range(window_end, curr_pos, -1):
+        word = data[curr_pos:word_end]
+        index = data.find(word, window_begin, word_end)
+        if index < curr_pos:
+            return (index, len(word))
 
-#     return "".join(result)
+    return (NOT_FOUND, 0)
 
 
-# def decode(text: str, corr: List[Tuple[str, str]]) -> str:
-#     map_ba = {b: a for (a, b) in corr}
-#     i = 0
-#     j = 1
-#     result = []
-#     while j <= len(text):
-#         word = text[i:j]
-#         if word in map_ba:
-#             result.append(map_ba[word])
-#             i = j
-#         j += 1
-
-#     return "".join(result)
+#########
+# Tests #
+#########
 
 
-# def canonical_code(lengths: List[int]) -> List[str]:
-#     """Returns the canonical prefix code over the alphabet `{0, 1}` associated
-#     to a list of integers.
+if __name__ == "__main__":
+    while True:
+        text = input("Input string: ")
+        tokens = encode_LZ77(text, 100, 100)
+        print(tokens)
+        decode = decode_LZ77(tokens)
+        print(decode)
 
-#     Each value in the input list represents the length of a codeword in the
-#     resulting code. This function will trigger an assertion if it is not
-#     possible to create a prefix code with the given list. If it succeeds, the
-#     codewords of the returned code will be sorted by lenght in the same order
-#     as in the input list.
+    # corr = [("0", "a"), ("10", "b"), ("11", "c")]
+    # text = "".join(random.choices(["0", "1"], k=100))
 
-#     For example:
+    # t = Timer()
 
-#     >>> >>> canonical_code([3, 3, 2, 4])
-#     >>> ['010', '011', '00', '1000']
-#     """
-#     # Kraft-McMillan inequality
-#     assert sum(pow(2, -li) for li in lengths) <= 1
+    # text = "0101110011110010"
+    # t.start()
+    # result = decode(encode(text, corr), corr)
+    # t.stop()
 
-#     counter = list(Counter(sorted(lengths)).items())
-#     code = []
-#     num = 0
-#     prev_len = counter[0][0]
+    # print(text, result, sep="\n")
 
-#     # Construct code in lexicographical order
-#     for (length, count) in counter:
-#         num = num << (length - prev_len)
-#         for _ in range(count):
-#             code.append(f"{num:0{length}b}")
-#             num += 1
-#         prev_len = length
+    # lenghts = [3, 4, 2, 2, 4, 4, 3]
+    # print(canonical_code(lenghts))
 
-#     # Reorder codewords
-#     index = 0
-#     for length in lengths:
-#         for i in range(index, len(code)):
-#             if len(code[i]) == length:
-#                 temp = code.pop(i)
-#                 code.insert(index, temp)
-#                 break
-#         index += 1
+    # source = [("a", 2), ("b", 2), ("c", 2), ("e", 4)]
+    # print(shannon_code(source))
+    # txt = open("../data/quijote_clean.txt", "r", encoding="utf-8").read()
+    # src = source_from_text(txt)
 
-#     return code
-
-
-# def shannon_code(src: List[Tuple[str, int]]) -> List[str]:
-#     w = sum(wi for (_, wi) in src)
-#     assert w <= 1
-#     lengths = [math.ceil(-math.log2(wi / w)) for (_, wi) in src]
-
-#     return canonical_code(lengths)
-
-
-# if __name__ == "__main__":
-#     # corr = [("0", "a"), ("10", "b"), ("11", "c")]
-#     # text = "".join(random.choices(["0", "1"], k=100))
-
-#     # t = Timer()
-
-#     # text = "0101110011110010"
-#     # t.start()
-#     # result = decode(encode(text, corr), corr)
-#     # t.stop()
-
-#     # print(text, result, sep="\n")
-
-#     # lenghts = [3, 4, 2, 2, 4, 4, 3]
-#     # print(canonical_code(lenghts))
-
-#     # source = [("a", 2), ("b", 2), ("c", 2), ("e", 4)]
-#     # print(shannon_code(source))
-#     txt = open("../data/quijote_clean.txt", "r", encoding="utf-8").read()
-#     src = source_from_text(txt)
-
-#     out = canonical_code([81, 81, 12, 2, 3, 7, 6, 15, 9, 9, 9, 9, 21, 3, 5])
-#     for s in out:
-#         print(s)
+    # out = canonical_code([81, 81, 12, 2, 3, 7, 6, 15, 9, 9, 9, 9, 21, 3, 5])
+    # for s in out:
+    #     print(s)
