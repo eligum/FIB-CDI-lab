@@ -30,7 +30,6 @@ def encode_LZ77(text: str, s: int, t: int) -> list[Token77]:
         w_begin = max(0, curr_pos - s)    # window first index
         w_end = min(n - 1, curr_pos + t)  # window last index + 1
         (index, length) = find_longest_match(text, curr_pos, w_begin, w_end)
-        print
         # 2. Append token
         offset = (curr_pos - index) if index != NOT_FOUND else 1
         symbol = text[curr_pos + length]
@@ -54,7 +53,7 @@ def decode_LZ77(tokens: list[Token77]) -> str:
     return "".join(text)
 
 
-def encode_LZSS(text: str, mm, s: int, t: int) -> list[TokenSS]:
+def encode_LZSS(text: str, mm: int, s: int, t: int) -> list[TokenSS]:
     """Encode a python string with the LZSS algorithm.
 
     Parameters
@@ -64,7 +63,27 @@ def encode_LZSS(text: str, mm, s: int, t: int) -> list[TokenSS]:
     s : Search buffer length.
     t : Lookahead buffer length.
     """
-    pass
+    tokens = []
+    curr_pos = 0  # window position (first index of the lookahead buffer)
+    n = len(text)
+
+    while curr_pos < n:
+        # 1. Find the longest match
+        w_begin = max(0, curr_pos - s)  # window first index
+        w_end = min(n, curr_pos + t)    # window last index + 1
+        (index, length) = find_longest_match(text, curr_pos, w_begin, w_end, mm)
+        # 2. Append token
+        if index != NOT_FOUND:
+            offset = (curr_pos - index)
+            token = (True, offset, length)
+        else:
+            token = (False, text[curr_pos])
+            length = 1
+        tokens.append(token)
+        # 3. Increase pointer
+        curr_pos += length
+
+    return tokens
 
 
 def decode_LZSS(tokens: list[TokenSS]) -> str:
@@ -154,7 +173,7 @@ def find_longest_match(
 if __name__ == "__main__":
     while True:
         text = input("Input string: ")
-        tokens = encode_LZ77(text, 100, 100)
+        tokens = encode_LZSS(text, 5, 100, 100)
         print(tokens)
-        decode = decode_LZ77(tokens)
+        decode = decode_LZSS(tokens)
         print(decode)
