@@ -4,6 +4,7 @@ from collections import Counter
 import math
 
 Token77 = tuple[int, int, str]
+TokenSS = tuple[bool, str] | tuple[bool, int, int]
 NOT_FOUND = -1
 
 #####################################
@@ -53,12 +54,31 @@ def decode_LZ77(tokens: list[Token77]) -> str:
     return "".join(text)
 
 
-def encode_LZSS(text: str, mm, s, t):
+def encode_LZSS(text: str, mm, s: int, t: int) -> list[TokenSS]:
+    """Encode a python string with the LZSS algorithm.
+
+    Parameters
+    ----------
+    text : Sequence of characters to be encoded.
+    mm : Minimum match length.
+    s : Search buffer length.
+    t : Lookahead buffer length.
+    """
     pass
 
 
-def decode_LZSS(tokens):
-    pass
+def decode_LZSS(tokens: list[TokenSS]) -> str:
+    text = []
+
+    for (bitflag, *args) in tokens:
+        if not bitflag:
+            text.append(args[0])
+        else:
+            offset, length = args
+            for _ in range(length):
+                text.append(text[-offset])
+
+    return "".join(text)
 
 
 ##########################################################
@@ -108,8 +128,16 @@ def decode_move_to_front(tok, alf):
 #######################
 
 
-def find_longest_match(data: str, curr_pos: int, window_begin: int, window_end: int) -> tuple[int, int]:
+def find_longest_match(
+    data: str,
+    curr_pos: int,
+    window_begin: int,
+    window_end: int,
+    min_match: int = 1
+) -> tuple[int, int]:
     for word_end in range(window_end, curr_pos, -1):
+        if word_end - curr_pos < min_match:
+            break
         word = data[curr_pos:word_end]
         index = data.find(word, window_begin, word_end)
         if index < curr_pos:
@@ -130,27 +158,3 @@ if __name__ == "__main__":
         print(tokens)
         decode = decode_LZ77(tokens)
         print(decode)
-
-    # corr = [("0", "a"), ("10", "b"), ("11", "c")]
-    # text = "".join(random.choices(["0", "1"], k=100))
-
-    # t = Timer()
-
-    # text = "0101110011110010"
-    # t.start()
-    # result = decode(encode(text, corr), corr)
-    # t.stop()
-
-    # print(text, result, sep="\n")
-
-    # lenghts = [3, 4, 2, 2, 4, 4, 3]
-    # print(canonical_code(lenghts))
-
-    # source = [("a", 2), ("b", 2), ("c", 2), ("e", 4)]
-    # print(shannon_code(source))
-    # txt = open("../data/quijote_clean.txt", "r", encoding="utf-8").read()
-    # src = source_from_text(txt)
-
-    # out = canonical_code([81, 81, 12, 2, 3, 7, 6, 15, 9, 9, 9, 9, 21, 3, 5])
-    # for s in out:
-    #     print(s)
