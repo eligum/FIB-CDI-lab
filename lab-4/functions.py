@@ -5,6 +5,7 @@ import math
 
 Token77 = tuple[int, int, str]
 TokenSS = tuple[bool, str] | tuple[bool, int, int]
+Token78 = tuple[int, str]
 NOT_FOUND = -1
 
 #####################################
@@ -105,15 +106,66 @@ def decode_LZSS(tokens: list[TokenSS]) -> str:
 ##########################################################
 
 
-def encode_LZ78(text: str):
-    pass
+def encode_LZ78(text: str) -> list[Token78]:
+    """Encode a python string with the LZ78 algorithm.
+    """
+    tokens = []
+    word_list = [""]
+    curr_pos = 0
+    n = len(text)
+
+    while curr_pos < n:
+        # Check if symbol at `curr_pos` has already been seen before
+        index = None
+        for (i, word) in enumerate(word_list):
+            if word == text[curr_pos]:
+                index = i
+                break
+        # If it has not, append token with index 0 and update `word_list`
+        if index is None:
+            tokens.append((0, text[curr_pos]))
+            word_list.append(text[curr_pos])
+            curr_pos += 1
+        # If it has, search for a longer match in the dictionary with the next
+        # symbol at `curr_pos` + k for k = 1, 2, 3... until no match is found.
+        else:
+            found = True
+            w_end = curr_pos + 2
+            while found and w_end <= n:
+                found = False
+                for (i, word) in enumerate(word_list[(index + 1):], index + 1):
+                    if word == text[curr_pos:w_end]:
+                        found = True
+                        index = i
+                        break
+                w_end += 1
+            # Check what caused the loop to terminate
+            if found:
+                tokens.append((index, ""))
+            else:
+                tokens.append((index, text[w_end - 2]))
+            # Update dictionary and current position
+            word_list.append(text[curr_pos:(w_end - 1)])
+            curr_pos = w_end - 1
+
+    return tokens
 
 
-def decode_LZ78(tok):
-    pass
+def decode_LZ78(tokens: list[Token78]) -> str:
+    text = []
+    word_list = [""]
+
+    for (index, char) in tokens:
+        text.append(word_list[index])
+        text.append(char)
+        word_list.append(word_list[index] + char)
+
+    return "".join(text)
 
 
 def encode_LZW(text: str):
+    """Encode a python string with the LZW algorithm.
+    """
     pass
 
 

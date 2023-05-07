@@ -5,8 +5,8 @@ text = "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha much
 
 
 def measure_performance():
-    tokens = lab.encode_LZSS(text, 3, 4095, 16)
-    print(text == lab.decode_LZSS(tokens))
+    tokens = lab.encode_LZ78(text) #, 3, 4095, 16)
+    print(text == lab.decode_LZ78(tokens))
 
 
 timestamps = []
