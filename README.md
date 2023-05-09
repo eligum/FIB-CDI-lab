@@ -1,3 +1,3 @@
 # FIB-CDI-lab
 
-Python laboratories of the CDI subject.
+CDI lab implementation in Python.
